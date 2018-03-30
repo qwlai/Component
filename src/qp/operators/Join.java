@@ -1,7 +1,10 @@
-/** This is base class for all the join operators * */
+/**
+ * This is base class for all the join operators *
+ */
 package qp.operators;
 
 import qp.utils.*;
+
 import java.util.Vector;
 
 public class Join extends Operator {

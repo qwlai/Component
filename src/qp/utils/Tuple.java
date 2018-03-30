@@ -1,4 +1,6 @@
-/** ******** Tuple container class ******** */
+/**
+ * ******* Tuple container class ********
+ */
 package qp.utils;
 
 import java.util.Vector;
@@ -61,4 +63,4 @@ public class Tuple implements Serializable {
             return 0;
         }
     }
-    }
+}

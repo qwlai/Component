@@ -1,4 +1,6 @@
-/** simple buffer manager that distributes the buffers equally among all the join operators */
+/**
+ * simple buffer manager that distributes the buffers equally among all the join operators
+ */
 package qp.optimizer;
 
 public class BufferManager {

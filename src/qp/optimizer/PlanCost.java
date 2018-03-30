@@ -1,9 +1,12 @@
-/** This method calculates the cost of the generated plans * */
+/**
+ * This method calculates the cost of the generated plans *  also estimates the statistics of the result relation *
+ */
 /** also estimates the statistics of the result relation * */
 package qp.optimizer;
 
 import qp.operators.*;
 import qp.utils.*;
+
 import java.util.Hashtable;
 import java.util.StringTokenizer;
 import java.util.Enumeration;
@@ -105,10 +108,10 @@ public class PlanCost {
         int rightattrdistn = ((Integer) ht.get(rightjoinAttr)).intValue();
 
         int outtuples =
-            (int)
-            Math.ceil(
-                    ((double) lefttuples * righttuples)
-                    / (double) Math.max(leftattrdistn, rightattrdistn));
+                (int)
+                        Math.ceil(
+                                ((double) lefttuples * righttuples)
+                                        / (double) Math.max(leftattrdistn, rightattrdistn));
 
         int mindistinct = Math.min(leftattrdistn, rightattrdistn);
         ht.put(leftjoinAttr, new Integer(mindistinct));
@@ -128,7 +131,7 @@ public class PlanCost {
                 joincost = leftpages * rightpages;
                 break;
             case JoinType.BLOCKNESTED:
-                joincost = 0;
+                joincost = leftpages + ((int) Math.ceil(leftpages / (numbuff - 2))) * rightpages;
                 break;
             case JoinType.SORTMERGE:
                 joincost = 0;

@@ -1,4 +1,6 @@
-/** Batch represents a page * */
+/**
+ * Batch represents a page *
+ */
 package qp.utils;
 
 import java.util.Vector;

@@ -1,4 +1,6 @@
-/** schema of the table/result, and is attached to every operator* */
+/**
+ * schema of the table/result, and is attached to every operator*
+ */
 package qp.utils;
 
 import java.io.Serializable;
@@ -10,7 +12,6 @@ public class Schema implements Serializable {
     int tuplesize; // Number of bytes required for this tuple (size of record)
 
     public Schema(Vector colset) {
-
         attset = colset;
     }
 
@@ -118,4 +119,4 @@ public class Schema implements Serializable {
         return newsche;
         // return new Schema(newvec);
     }
-    }
+}

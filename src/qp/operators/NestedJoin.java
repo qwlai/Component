@@ -1,7 +1,10 @@
-/** page nested join algorithm * */
+/**
+ * page nested join algorithm *
+ */
 package qp.operators;
 
 import qp.utils.*;
+
 import java.io.*;
 import java.util.*;
 import java.lang.*;
@@ -45,6 +48,7 @@ public class NestedJoin extends Join {
         /** select number of tuples per batch * */
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
+        System.out.println("block size: " + batchsize);
 
         Attribute leftattr = con.getLhs();
         Attribute rightattr = (Attribute) con.getRhs();
@@ -106,14 +110,17 @@ public class NestedJoin extends Join {
         outbatch = new Batch(batchsize);
 
         while (!outbatch.isFull()) {
-
+            //at the start lcurs is 0 and eosr is true
             if (lcurs == 0 && eosr == true) {
                 /** new left page is to be fetched* */
+
                 leftbatch = (Batch) left.next();
-                if (leftbatch == null) {
+
+                if (leftbatch == null) { //no more left pages
                     eosl = true;
-                    return outbatch;
+                    return outbatch; //returns output block
                 }
+                // read entire right file table
                 /** Whenver a new left page came , we have to start the * scanning of right table */
                 try {
 
@@ -143,10 +150,10 @@ public class NestedJoin extends Join {
                                 // System.out.println();
                                 outbatch.add(outtuple);
                                 if (outbatch.isFull()) {
-                                    if (i == leftbatch.size() - 1 && j == rightbatch.size() - 1) { // case 1
+                                    if (i == leftbatch.size() - 1 && j == rightbatch.size() - 1) { // case 1 left and right reach the end, so reset cursors
                                         lcurs = 0;
                                         rcurs = 0;
-                                    } else if (i != leftbatch.size() - 1 && j == rightbatch.size() - 1) { // case 2
+                                    } else if (i != leftbatch.size() - 1 && j == rightbatch.size() - 1) { // case 2 left not ended, right ended, so reset right
                                         lcurs = i + 1;
                                         rcurs = 0;
                                     } else if (i == leftbatch.size() - 1 && j != rightbatch.size() - 1) { // case 3

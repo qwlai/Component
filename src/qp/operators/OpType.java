@@ -1,4 +1,6 @@
-/** enumeration of different operator types * */
+/**
+ * enumeration of different operator types *
+ */
 package qp.operators;
 
 public class OpType {

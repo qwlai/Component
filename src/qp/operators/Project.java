@@ -1,7 +1,10 @@
-/** To projec out the required attributes from the result * */
+/**
+ * To projec out the required attributes from the result *
+ */
 package qp.operators;
 
 import qp.utils.*;
+
 import java.util.Vector;
 
 public class Project extends Operator {

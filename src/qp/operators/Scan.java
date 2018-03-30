@@ -1,7 +1,10 @@
-/** Scans the base relational table * */
+/**
+ * Scans the base relational table *
+ */
 package qp.operators;
 
 import qp.utils.*;
+
 import java.io.*;
 import java.util.Vector;
 

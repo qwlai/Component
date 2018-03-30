@@ -1,9 +1,12 @@
-/** prepares a random initial plan for the given SQL query * */
+/**
+ * prepares a random initial plan for the given SQL query *  see the ReadMe file to understand this *
+ */
 /** see the ReadMe file to understand this * */
 package qp.optimizer;
 
 import qp.utils.*;
 import qp.operators.*;
+
 import java.util.Vector;
 import java.util.BitSet;
 import java.util.Hashtable;
@@ -143,7 +146,7 @@ public class RandomInitialPlan {
             /** randomly select a join type* */
             int numJMeth = JoinType.numJoinTypes();
             int joinMeth = RandNumb.randInt(0, numJMeth - 1);
-            jn.setJoinType(joinMeth);
+            jn.setJoinType(1);
 
             modifyHashtable(left, jn);
             modifyHashtable(right, jn);

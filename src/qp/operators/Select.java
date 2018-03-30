@@ -1,7 +1,10 @@
-/** Select Operation * */
+/**
+ * Select Operation *
+ */
 package qp.operators;
 
 import qp.utils.*;
+
 import java.util.Vector;
 
 public class Select extends Operator {

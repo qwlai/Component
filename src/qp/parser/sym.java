@@ -4,7 +4,9 @@ package qp.parser;
 // Sat Jul 12 15:58:40 SGT 2003
 // ----------------------------------------------------
 
-/** CUP generated class containing symbol constants. */
+/**
+ * CUP generated class containing symbol constants.
+ */
 public class sym {
     /* terminals */
     public static final int WHERE = 17;

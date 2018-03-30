@@ -1,4 +1,6 @@
-/** This class to print various information * */
+/**
+ * This class to print various information *
+ */
 package qp.operators;
 
 import qp.utils.*;

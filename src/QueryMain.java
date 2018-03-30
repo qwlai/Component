@@ -1,4 +1,7 @@
-/** This is main driver program of the query processor */
+/**
+ * This is main driver program of the query processor
+ */
+
 import java.io.*;
 
 import qp.utils.*;
@@ -14,12 +17,12 @@ public class QueryMain {
     public static void main(String[] args) {
 
         if (args.length != 2) {
-            System.out.println("usage: java QueryMain <queryfilename> <resultfile>");
+            System.out.println("Usage: java QueryMain <queryfilename> <resultfile>");
             System.exit(1);
         }
 
         /** Enter the number of bytes per page * */
-        System.out.println("enter the number of bytes per page");
+        System.out.println("Enter the number of bytes per page");
         BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         String temp;
         try {
@@ -49,7 +52,7 @@ public class QueryMain {
         try {
             p.parse();
         } catch (Exception e) {
-            System.out.println("Exception occured while parsing");
+            System.out.println("Exception occurred while parsing");
             System.exit(1);
         }
 
@@ -60,7 +63,7 @@ public class QueryMain {
         /** If there are joins then assigns buffers to each join operator while preparing the plan */
         /** As buffer manager is not implemented, just input the number of buffers available */
         if (numJoin != 0) {
-            System.out.println("enter the number of buffers available");
+            System.out.println("Enter the number of buffers available");
 
             try {
                 temp = in.readLine();
@@ -79,21 +82,24 @@ public class QueryMain {
         }
 
         /**
-         * This part is used When some random initial plan is required instead of comple optimized plan
+         * This part is used When some random initial plan is required instead of complete optimized plan
          * *
          */
         /**
-         * RandomInitialPlan rip = new RandomInitialPlan(sqlquery); Operator logicalroot =
-         * rip.prepareInitialPlan(); PlanCost pc = new PlanCost(); int initCost =
-         * pc.getCost(logicalroot); Debug.PPrint(logicalroot); System.out.print(" "+initCost);
-         * System.out.println();
+         RandomInitialPlan rip = new RandomInitialPlan(sqlquery);
+         Operator logicalroot = rip.prepareInitialPlan();
+         PlanCost pc = new PlanCost();
+         int initCost = pc.getCost(logicalroot);
+         Debug.PPrint(logicalroot);
+         System.out.print(" "+initCost);
+         System.out.println();
          */
 
         /** Use random Optimization algorithm to get a random optimized execution plan */
         RandomOptimizer ro = new RandomOptimizer(sqlquery);
         Operator logicalroot = ro.getOptimizedPlan();
         if (logicalroot == null) {
-            System.out.println("root is null");
+            System.out.println("Root is null");
             System.exit(1);
         }
 
@@ -106,7 +112,7 @@ public class QueryMain {
         System.out.println();
 
         /** Ask user whether to continue execution of the program * */
-        System.out.println("enter 1 to continue, 0 to abort ");
+        System.out.println("Enter 1 to continue, 0 to abort ");
 
         try {
             temp = in.readLine();

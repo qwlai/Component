@@ -1,4 +1,6 @@
-/** the format of the parse SQL quer, also see readme file * */
+/**
+ * the format of the parse SQL quer, also see readme file *
+ */
 package qp.utils;
 
 import java.util.Vector;

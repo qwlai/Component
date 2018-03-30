@@ -1,32 +1,43 @@
-/** performs randomized optimization, iterative improvement algorithm * */
+/**
+ * performs randomized optimization, iterative improvement algorithm *
+ */
 package qp.optimizer;
 
 import qp.utils.*;
 import qp.operators.*;
+
 import java.lang.Math;
 import java.util.Vector;
 
 public class RandomOptimizer {
 
-    /** enumeration of different ways to find the neighbor plan * */
+    /**
+     * enumeration of different ways to find the neighbor plan *
+     */
     public static final int METHODCHOICE =
-        0; // selecting neighbor by changing a method for an operator
+            0; // selecting neighbor by changing a method for an operator
 
     public static final int COMMUTATIVE = 1; // by rearranging the operators by commutative rule
     public static final int ASSOCIATIVE = 2; // rearranging the operators by associative rule
 
-    /** Number of altenative methods available for a node as specified above* */
+    /**
+     * Number of altenative methods available for a node as specified above*
+     */
     public static final int NUMCHOICES = 3;
 
     SQLQuery sqlquery; // Vector of Vectors of Select + From + Where + GroupBy
     int numJoin; // Number of joins in this query plan
 
-    /** constructor * */
+    /**
+     * constructor *
+     */
     public RandomOptimizer(SQLQuery sqlquery) {
         this.sqlquery = sqlquery;
     }
 
-    /** Randomly selects a neighbour * */
+    /**
+     * Randomly selects a neighbour *
+     */
     protected Operator getNeighbor(Operator root) {
         // Randomly select a node to be altered to get the neighbour
         int nodeNum = RandNumb.randInt(0, numJoin - 1);
@@ -145,7 +156,7 @@ public class RandomOptimizer {
     }
 
     /**
-     * Selects a random method choice for join wiht number joinNum * e.g., Nested loop join,
+     * Selects a random method choice for join with number joinNum * e.g., Nested loop join,
      * Sort-Merge Join, Hash Join etc.., * returns the modified plan
      */
     protected Operator neighborMeth(Operator root, int joinNum) {
@@ -214,7 +225,9 @@ public class RandomOptimizer {
         return root;
     }
 
-    /** This is given plan (A X B) X C * */
+    /**
+     * This is given plan (A X B) X C *
+     */
     protected void transformLefttoRight(Join op, Join left) {
         System.out.println("------------------Left to Right neighbor--------------");
         Operator right = op.getRight();
@@ -300,7 +313,9 @@ public class RandomOptimizer {
         }
     }
 
-    /** This method traverses through the query plan and * returns the node mentioned by joinNum */
+    /**
+     * This method traverses through the query plan and * returns the node mentioned by joinNum
+     */
     protected Operator findNodeAt(Operator node, int joinNum) {
         if (node.getOpType() == OpType.JOIN) {
             if (((Join) node).getNodeIndex() == joinNum) {
@@ -366,17 +381,21 @@ public class RandomOptimizer {
                     nj.setNumBuff(numbuff);
                     return nj;
 
-                    /** Temporarity used simple nested join, replace with hasjoin, if implemented * */
+                /** Temporarily used simple nested join, replace with BlockNestedJoin, if implemented * */
                 case JoinType.BLOCKNESTED:
-                    NestedJoin bj = new NestedJoin((Join) node);
-                    /* + other code */
+                    BlockNestedJoin bj = new BlockNestedJoin((Join) node);
+                    bj.setLeft(left);
+                    bj.setRight(right);
+                    bj.setNumBuff(numbuff);
                     return bj;
 
+                /** Temporarily used simple nested join, replace with SortMergeJoin, if implemented * */
                 case JoinType.SORTMERGE:
                     NestedJoin sm = new NestedJoin((Join) node);
                     /* + other code */
                     return sm;
 
+                /** Temporarily used simple nested join, replace with HashJoin, if implemented * */
                 case JoinType.HASHJOIN:
                     NestedJoin hj = new NestedJoin((Join) node);
                     /* + other code */

@@ -1,11 +1,13 @@
-/** This is base class for all the operators * */
+/**
+ * This is base class for all the operators *
+ */
 package qp.operators;
 
 import qp.utils.*;
 
 public class Operator {
 
-    int optype; // Whether it is OpType.SELECT/ Optype.PROJECT/OpType.JOIN
+    int optype; // Whether it is OpType.SELECT / Optype.PROJECT / OpType.JOIN
     Schema schema; // Schema of the result at this operator
 
     public Operator(int type) {
@@ -29,7 +31,6 @@ public class Operator {
     }
 
     public boolean open() {
-
         return true;
     }
 

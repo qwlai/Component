@@ -1,4 +1,6 @@
-/** Attibute or column meta data * */
+/**
+ * Attibute or column meta data *
+ */
 package qp.utils;
 
 import java.io.Serializable;
@@ -43,7 +45,7 @@ public class Attribute implements Serializable {
     public Attribute(String tbl, String col, int typ, int keytype, int size) {
         tblname = tbl;
         colname = col;
-        type = typ;
+        type = typ; //datatype
         key = keytype;
         attrsize = size;
     }

@@ -3,7 +3,8 @@ package qp.parser;
 public class TokenValue {
     public String text;
 
-    public TokenValue() {}
+    public TokenValue() {
+    }
 
     public TokenValue(String text) {
         this.text = text;

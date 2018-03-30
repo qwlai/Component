@@ -1,4 +1,6 @@
-/** represents join/select condition * */
+/**
+ * represents join/select condition *
+ */
 package qp.utils;
 
 public class Condition {

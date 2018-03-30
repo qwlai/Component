@@ -1,4 +1,6 @@
-/** functions to get some random numbers, useful in random optimizer * */
+/**
+ * functions to get some random numbers, useful in random optimizer *
+ */
 package qp.utils;
 
 import java.lang.Math;

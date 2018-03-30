@@ -1,5 +1,6 @@
 import java.util.*;
 import java.io.*;
+
 import qp.utils.*;
 
 public class RandomDB {
@@ -12,7 +13,9 @@ public class RandomDB {
         random = new Random(System.currentTimeMillis());
     }
 
-    /** Generates a random string of length equal to range * */
+    /**
+     * Generates a random string of length equal to range *
+     */
     public String randString(int range) {
 
         String s = "";
