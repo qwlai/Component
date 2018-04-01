@@ -32,10 +32,10 @@ public class SortMergeJoin extends Join {
         ExternalSort leftRelation = new ExternalSort(left, numBuff, leftIndex, "LSRTemp-");
         ExternalSort rightRelation = new ExternalSort(right, numBuff, rightIndex, "RSRTemp-");
 
-        if (!(leftRelation.open() && (rightRelation.open()))) {
+        if (!(leftRelation.open() && rightRelation.open())) {
             return false;
         }
-        
+        return true;
     }
 
 
