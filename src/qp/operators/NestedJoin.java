@@ -48,7 +48,7 @@ public class NestedJoin extends Join {
         /** select number of tuples per batch * */
         int tuplesize = schema.getTupleSize();
         batchsize = Batch.getPageSize() / tuplesize;
-        System.out.println("block size: " + batchsize);
+        //System.out.println("block size: " + batchsize);
 
         Attribute leftattr = con.getLhs();
         Attribute rightattr = (Attribute) con.getRhs();
