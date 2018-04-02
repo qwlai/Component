@@ -143,17 +143,11 @@ public class SortMergeJoin extends Join {
              */
             if (leftPQ.isEmpty() && hasLoadLastLeftBlock) {
                 while (true) {
-                    if (rightTuple == null) {
-                        System.out.println("HUE");
-                        hasFinishLeftRelation = true;
-                        return outBatch;
+                    if (rightTuple != null) {
+                        processRightRelation(false);
                     }
-                    compareWithRightRelation();
-                    if (leftTuple == null) {
-                        System.out.println("HUE");
-                        hasFinishLeftRelation = true;
-                        return outBatch;
-                    }
+                    hasFinishLeftRelation = true;
+                    return outBatch;
                 }
             }
         }
@@ -183,7 +177,8 @@ public class SortMergeJoin extends Join {
 
                     inLeft.close();
                     hasLoadLastLeftBlock = true;
-
+                    File f = new File(leftRunName + "0");
+                    f.delete();
                 } catch (IOException io) {
                     System.out.println("SortMergeJoin: Error in temp read");
                     System.exit(1);
@@ -234,8 +229,11 @@ public class SortMergeJoin extends Join {
             if (outBatch.isFull()) { // after adding, check if is full
                 return;
             }
-        } else if (comparison < 0) { // left < right, progress left
-            if (Tuple.compareTuples(leftPQ.peek(), leftTuple, leftIndex) == 0) {
+        } else if (comparison > 0) { // left > right, progress right
+            rightTuple = rightPQ.poll();
+        } else {
+            if (Tuple.compareTuples(leftPQ.peek(), leftTuple, leftIndex) == 0) { // left < right progress left
+
                 leftTuple = leftPQ.poll();
                 undoPQ();
                 compareWithRightRelation();
@@ -243,8 +241,6 @@ public class SortMergeJoin extends Join {
             } else {
                 leftTuple = leftPQ.poll();
             }
-        } else {
-            rightTuple = rightPQ.poll(); // left > right, progress right
         }
     }
 
@@ -266,6 +262,8 @@ public class SortMergeJoin extends Join {
             try {
                 inRight.close();
                 hasLoadLastRightBatch = true;
+                File f = new File(rightRunName + "0");
+                f.delete();
             } catch (IOException io) {
                 System.out.println("SortMergeJoin: Error in temp read");
                 System.exit(1);
@@ -294,10 +292,6 @@ public class SortMergeJoin extends Join {
     }
 
     public boolean close() {
-        File lf = new File(leftRunName + "0");
-        File rf = new File(rightRunName + "0");
-        lf.delete();
-        rf.delete();
-        return true;
+        return (left.close() && right.close());
     }
 }
