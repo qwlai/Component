@@ -1,5 +1,8 @@
 /**
  * This method calculates the cost of the generated plans *  also estimates the statistics of the result relation *
+ * also estimates the statistics of the result relation *
+ * also estimates the statistics of the result relation *
+ * also estimates the statistics of the result relation *
  */
 /** also estimates the statistics of the result relation * */
 package qp.optimizer;
@@ -134,7 +137,10 @@ public class PlanCost {
                 joincost = leftpages + ((int) Math.ceil(leftpages / (numbuff - 2))) * rightpages;
                 break;
             case JoinType.SORTMERGE:
-                joincost = 0;
+                int numofLeftPass = (int) (Math.log(Math.ceil(leftpages / numbuff)) / Math.log(numbuff - 1) + 1);
+                int numofRightPass = (int) (Math.log(Math.ceil(rightpages / numbuff)) / Math.log(numbuff - 1) + 1);
+                int sortcost = 2 * (numofLeftPass * leftpages + numofRightPass * rightpages);
+                joincost = leftpages + rightpages + sortcost;
                 break;
             case JoinType.HASHJOIN:
                 joincost = 0;

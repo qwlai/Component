@@ -40,7 +40,6 @@ public class Operator {
     }
 
     public boolean close() {
-
         return true;
     }
 
