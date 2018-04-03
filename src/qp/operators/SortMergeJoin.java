@@ -110,6 +110,28 @@ public class SortMergeJoin extends Join {
             while (!leftPQ.isEmpty()) {
                 processRightRelation();
 
+                /** Handle cases where last is at its last right element */
+                if (rightPQ.isEmpty() && hasLoadLastRightBatch && rightTuple != null) {
+                    while (true) {
+                       compareWithRightRelation();
+                       /** Need to check that left doesn't have any with similar value anymore */
+                       if (rightTuple == null) {
+                           /** Next left tuple is the same as current */
+                           while (Tuple.compareTuples(leftPQ.peek(), leftTuple, leftIndex) == 0) {
+                               leftTuple = leftPQ.poll();
+                               undoPQ();
+                               processRightRelation();
+
+                               if (outBatch.isFull()) {
+                                   return outBatch;
+                               }
+                           }
+                           hasFinishRightRelation = true;
+                           return outBatch;
+                       }
+                    }
+                }
+
                 if (outBatch.isFull()) {
                     return outBatch;
                 }
@@ -118,7 +140,6 @@ public class SortMergeJoin extends Join {
 
             /** leftPQ is now empty, but yet to process last element of left */
             if (leftPQ.isEmpty() && hasLoadLastLeftBlock) {
-
                 /** Case where left is last element, right is also last element */
                 if (hasLoadLastRightBatch && rightPQ.isEmpty()) {
                     compareWithRightRelation();
@@ -126,7 +147,6 @@ public class SortMergeJoin extends Join {
                     return outBatch;
                 /** Cases where left is last element, but right have batches that have matching element */
                 } else if (!hasLoadLastRightBatch) {
-                    System.out.println("SPECIAL CASE: ");
                     while (Tuple.compareTuples(leftTuple, rightTuple, leftIndex, rightIndex) <= 0) {
 
                         processRightRelation();
@@ -145,7 +165,13 @@ public class SortMergeJoin extends Join {
                             return outBatch;
                         }
                     }
-
+                /** Cases where left is last element, right has some elements left */
+                } else {
+                    processRightRelation();
+                    compareWithRightRelation(); // handle last tuple
+                    if (outBatch.isFull()) {
+                        return outBatch;
+                    }
                 }
                  hasFinishLeftRelation = true;
                  return outBatch;
@@ -162,7 +188,6 @@ public class SortMergeJoin extends Join {
     private void processRightRelation() {
 
         while (!rightPQ.isEmpty()) {
-
             if (leftTuple == null) {
                 break;
             }
@@ -180,9 +205,10 @@ public class SortMergeJoin extends Join {
      * Compare left and right tuples, join tuples if they match the condition
      */
     private void compareWithRightRelation() {
-        System.out.println("------------------------OUTSIDE--------------------------------");
-        Debug.PPrint(leftTuple);
-        Debug.PPrint(rightTuple);
+
+        if (rightTuple == null || leftTuple == null) {
+            return;
+        }
 
         int comparison = Tuple.compareTuples(leftTuple, rightTuple, leftIndex, rightIndex);
 
@@ -214,7 +240,8 @@ public class SortMergeJoin extends Join {
      *  Undo PQ to previous state
      */
     private void undoPQ() {
-        tupleStack.push(rightTuple);
+        if (rightTuple != null)
+            tupleStack.push(rightTuple);
 
         while (Tuple.compareTuples(leftTuple, tupleStack.peek(), leftIndex, rightIndex) <= 0) {
             rightPQ.add(tupleStack.pop());
