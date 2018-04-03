@@ -1,6 +1,7 @@
 package qp.operators;
 
 import java.io.*;
+import java.nio.Buffer;
 import java.util.PriorityQueue;
 import java.util.Stack;
 
@@ -101,7 +102,6 @@ public class SortMergeJoin extends Join {
 
         outBatch = new Batch(batchSize);
         while (!outBatch.isFull()) { // output batch is not full
-
             if (!hasLoadLastLeftBlock) {
                 loadLeftBlock(); // load blocks from left relation
             }
@@ -110,14 +110,23 @@ public class SortMergeJoin extends Join {
             while (!leftPQ.isEmpty()) {
                 processRightRelation();
 
+                if (outBatch.isFull()) {
+                    return outBatch;
+                }
                 /** Handle cases where last is at its last right element */
                 if (rightPQ.isEmpty() && hasLoadLastRightBatch && rightTuple != null) {
                     while (true) {
                        compareWithRightRelation();
+
+                       if (outBatch.isFull()) {
+                           return outBatch;
+                       }
+
                        /** Need to check that left doesn't have any with similar value anymore */
                        if (rightTuple == null) {
                            /** Next left tuple is the same as current */
                            while (Tuple.compareTuples(leftPQ.peek(), leftTuple, leftIndex) == 0) {
+
                                leftTuple = leftPQ.poll();
                                undoPQ();
                                processRightRelation();
@@ -125,17 +134,18 @@ public class SortMergeJoin extends Join {
                                if (outBatch.isFull()) {
                                    return outBatch;
                                }
+
+                                if (leftPQ.peek() == null) {
+                                   return outBatch;
+                                }
                            }
                            hasFinishRightRelation = true;
                            return outBatch;
                        }
                     }
-                }
-
-                if (outBatch.isFull()) {
+                } else { // exhausted last right element
                     return outBatch;
                 }
-
             }
 
             /** leftPQ is now empty, but yet to process last element of left */
@@ -147,6 +157,7 @@ public class SortMergeJoin extends Join {
                     return outBatch;
                 /** Cases where left is last element, but right have batches that have matching element */
                 } else if (!hasLoadLastRightBatch) {
+
                     while (Tuple.compareTuples(leftTuple, rightTuple, leftIndex, rightIndex) <= 0) {
 
                         processRightRelation();
@@ -240,8 +251,9 @@ public class SortMergeJoin extends Join {
      *  Undo PQ to previous state
      */
     private void undoPQ() {
-        if (rightTuple != null)
+        if (rightTuple != null) {
             tupleStack.push(rightTuple);
+        }
 
         while (Tuple.compareTuples(leftTuple, tupleStack.peek(), leftIndex, rightIndex) <= 0) {
             rightPQ.add(tupleStack.pop());
