@@ -94,64 +94,133 @@ public class SortMergeJoin extends Join {
      * Returns a page of output tuples
      */
     public Batch next() {
-        outBatch = new Batch(batchSize);
 
         if (hasFinishRightRelation || hasFinishLeftRelation) {
             return null;
         }
 
+        outBatch = new Batch(batchSize);
         while (!outBatch.isFull()) { // output batch is not full
 
             if (!hasLoadLastLeftBlock) {
                 loadLeftBlock(); // load blocks from left relation
             }
 
-            while (!leftPQ.isEmpty()) { // Once leftPQ is empty, loads the next left block
-                processRightRelation(false);
-
-                /**
-                 * Last element of right relation reached, repeatedly exhaust left relation
-                 * until right progresses to null element, check for duplicate as well
-                 */
-                if (rightPQ.isEmpty() && hasLoadLastRightBatch) {
-                    while (true) {
-                        compareWithRightRelation();
-                        if (rightTuple == null) {
-                            while (Tuple.compareTuples(leftPQ.peek(), leftTuple, leftIndex) == 0) {
-                                leftTuple = leftPQ.poll();
-                                undoPQ();
-                                processRightRelation(true);
-                                compareWithRightRelation(); // handle last right tuple
-                                if (leftPQ.peek() == null) { // no more duplicates found
-                                    break;
-                                }
-                            }
-                            hasFinishRightRelation = true;
-                            return outBatch;
-                        }
-                    }
-                }
+            /** leftPQ is empty, load next left block */
+            while (!leftPQ.isEmpty()) {
+                processRightRelation();
 
                 if (outBatch.isFull()) {
                     return outBatch;
                 }
+
             }
 
-            /**
-             * Last element of left relation reached, repeatedly exhaust right relation
-             * until left progresses to null element
-             */
+            /** leftPQ is now empty, but yet to process last element of left */
             if (leftPQ.isEmpty() && hasLoadLastLeftBlock) {
-                while (true) {
-                    if (rightTuple != null) {
-                        processRightRelation(false);
-                    }
+
+                /** Case where left is last element, right is also last element */
+                if (hasLoadLastRightBatch && rightPQ.isEmpty()) {
+                    compareWithRightRelation();
                     hasFinishLeftRelation = true;
                     return outBatch;
+                /** Cases where left is last element, but right have batches that have matching element */
+                } else if (!hasLoadLastRightBatch) {
+                    System.out.println("SPECIAL CASE: ");
+                    while (Tuple.compareTuples(leftTuple, rightTuple, leftIndex, rightIndex) <= 0) {
+
+                        processRightRelation();
+
+                        /** Breaks when left becomes null, which is when right relation with same value has been exhausted */
+                        if (leftTuple == null) {
+                            break;
+                        }
+
+                        if (outBatch.isFull()) {
+                            return outBatch;
+                        }
+
+                        /** Case where continously loading leads to end of right relation */
+                        if (hasLoadLastRightBatch && rightPQ.isEmpty()) {
+                            return outBatch;
+                        }
+                    }
+
+                }
+                 hasFinishLeftRelation = true;
+                 return outBatch;
                 }
             }
-        }
+
         return outBatch;
+    }
+
+
+    /**
+     * Process right relation, read right batch when rightPQ is empty
+     */
+    private void processRightRelation() {
+
+        while (!rightPQ.isEmpty()) {
+
+            if (leftTuple == null) {
+                break;
+            }
+            compareWithRightRelation();
+
+            if (outBatch.isFull()) {
+                return;
+            }
+
+        }
+        readRightBatch();
+    }
+
+    /**
+     * Compare left and right tuples, join tuples if they match the condition
+     */
+    private void compareWithRightRelation() {
+        System.out.println("------------------------OUTSIDE--------------------------------");
+        Debug.PPrint(leftTuple);
+        Debug.PPrint(rightTuple);
+
+        int comparison = Tuple.compareTuples(leftTuple, rightTuple, leftIndex, rightIndex);
+
+        if (comparison == 0) { // matching join value, poll right
+            Tuple outTuple = leftTuple.joinWith(rightTuple);
+            outBatch.add(outTuple);
+
+            tupleStack.push(rightTuple);
+            rightTuple = rightPQ.poll();
+
+            if (outBatch.isFull()) { // after adding, check if is full
+                return;
+            }
+        } else if (comparison > 0) { // left > right, progress right
+            tupleStack.push(rightTuple);
+            rightTuple = rightPQ.poll();
+        } else { // left < right progress left
+            if (leftPQ.peek() != null) {
+                /** If next tuple is the same, right has progress more than left, restore */
+                if (Tuple.compareTuples(leftPQ.peek(), leftTuple, leftIndex) == 0) {
+                    undoPQ();
+                }
+            }
+            leftTuple = leftPQ.poll();
+        }
+    }
+
+    /** Handle case where join condition is not set on pkey, duplicates may occur on left relation
+     *  Undo PQ to previous state
+     */
+    private void undoPQ() {
+        tupleStack.push(rightTuple);
+
+        while (Tuple.compareTuples(leftTuple, tupleStack.peek(), leftIndex, rightIndex) <= 0) {
+            rightPQ.add(tupleStack.pop());
+        }
+
+        rightTuple = rightPQ.poll();
     }
 
     /**
@@ -197,53 +266,6 @@ public class SortMergeJoin extends Join {
         }
     }
 
-    /**
-     * Process right relation, read right batch when rightPQ is empty
-     */
-    private void processRightRelation(boolean hasDuplicate) {
-        while (!rightPQ.isEmpty()) {
-            if (!hasDuplicate) {
-                if (leftPQ.isEmpty()) {
-                    return;
-                }
-            }
-            compareWithRightRelation();
-        }
-        readRightBatch();
-    }
-
-    /**
-     * Compare left and right tuples, join tuples if they match the condition
-     */
-    private void compareWithRightRelation() {
-
-        int comparison = Tuple.compareTuples(leftTuple, rightTuple, leftIndex, rightIndex);
-
-        if (comparison == 0) { // matching join value, poll right
-            Tuple outTuple = leftTuple.joinWith(rightTuple);
-
-            outBatch.add(outTuple);
-            tupleStack.push(rightTuple);
-            rightTuple = rightPQ.poll();
-
-            if (outBatch.isFull()) { // after adding, check if is full
-                return;
-            }
-        } else if (comparison > 0) { // left > right, progress right
-            rightTuple = rightPQ.poll();
-        } else {
-            if (Tuple.compareTuples(leftPQ.peek(), leftTuple, leftIndex) == 0) { // left < right progress left
-
-                leftTuple = leftPQ.poll();
-                undoPQ();
-                compareWithRightRelation();
-                processRightRelation(true);
-            } else {
-                leftTuple = leftPQ.poll();
-            }
-        }
-    }
-
     /** Reads 1 batch file from right relation */
     private void readRightBatch() {
         try {
@@ -273,21 +295,6 @@ public class SortMergeJoin extends Join {
             System.exit(1);
         } catch (IOException io) {
             return;
-        }
-    }
-
-    /** Handle case where join condition is not set on pkey, duplicates may occur on left relation
-     *  Undo PQ to previous state
-     */
-    private void undoPQ() {
-        while (true) {
-            /** Retrace right tuples until it goes back to the first occurence of the match */
-            if (Tuple.compareTuples(leftTuple, tupleStack.peek(), leftIndex, rightIndex) == 0) {
-                rightPQ.add(tupleStack.pop());
-            } else {
-                rightTuple = rightPQ.poll();
-                return;
-            }
         }
     }
 
