@@ -124,6 +124,10 @@ public class SortMergeJoin extends Join {
                             return outBatch;
                         }
 
+                        if (leftPQ.peek() == null) {
+                            return  outBatch;
+                        }
+
                         /** Need to check that left doesn't have any with similar value anymore */
                         if (rightTuple == null) {
                             /** Next left tuple is the same as current */
