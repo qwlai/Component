@@ -115,6 +115,7 @@ public class SortMergeJoin extends Join {
                 if (outBatch.isFull()) {
                     return outBatch;
                 }
+
                 /** Handle cases where last is at its last right element */
                 if (rightPQ.isEmpty() && hasLoadLastRightBatch && rightTuple != null) {
                     while (true) {
@@ -149,7 +150,10 @@ public class SortMergeJoin extends Join {
                             return outBatch;
                         }
                     }
-                } else { // exhausted last right element
+                } else if (rightPQ.isEmpty() && hasLoadLastRightBatch && rightTuple == null){ // exhausted last right element
+                    hasFinishRightRelation = true;
+                    return outBatch;
+                } else { // all other cases
                     return outBatch;
                 }
             }
