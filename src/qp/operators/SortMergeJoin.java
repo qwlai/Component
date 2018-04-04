@@ -13,7 +13,9 @@ public class SortMergeJoin extends Join {
 
     private int batchSize; // number of tuples per out batch
 
-    /** The following fields are useful during execution of the SortMergeJoin operation */
+    /**
+     * The following fields are useful during execution of the SortMergeJoin operation
+     */
     private int leftIndex; // Index of the join attribute in left table
     private int rightIndex; // Index of the join attribute in right table
 
@@ -81,8 +83,8 @@ public class SortMergeJoin extends Join {
             System.exit(1);
         }
 
-        leftPQ = new PriorityQueue<>((t1,t2) -> Tuple.compareTuples(t1, t2, leftIndex));
-        rightPQ = new PriorityQueue<>((t1,t2) -> Tuple.compareTuples(t1, t2, rightIndex));
+        leftPQ = new PriorityQueue<>((t1, t2) -> Tuple.compareTuples(t1, t2, leftIndex));
+        rightPQ = new PriorityQueue<>((t1, t2) -> Tuple.compareTuples(t1, t2, rightIndex));
         tupleStack = new Stack<>();
 
         return true;
@@ -116,32 +118,32 @@ public class SortMergeJoin extends Join {
                 /** Handle cases where last is at its last right element */
                 if (rightPQ.isEmpty() && hasLoadLastRightBatch && rightTuple != null) {
                     while (true) {
-                       compareWithRightRelation();
+                        compareWithRightRelation();
 
-                       if (outBatch.isFull()) {
-                           return outBatch;
-                       }
+                        if (outBatch.isFull()) {
+                            return outBatch;
+                        }
 
-                       /** Need to check that left doesn't have any with similar value anymore */
-                       if (rightTuple == null) {
-                           /** Next left tuple is the same as current */
-                           while (Tuple.compareTuples(leftPQ.peek(), leftTuple, leftIndex) == 0) {
+                        /** Need to check that left doesn't have any with similar value anymore */
+                        if (rightTuple == null) {
+                            /** Next left tuple is the same as current */
+                            while (Tuple.compareTuples(leftPQ.peek(), leftTuple, leftIndex) == 0) {
 
-                               leftTuple = leftPQ.poll();
-                               undoPQ();
-                               processRightRelation();
+                                leftTuple = leftPQ.poll();
+                                undoPQ();
+                                processRightRelation();
 
-                               if (outBatch.isFull()) {
-                                   return outBatch;
-                               }
+                                if (outBatch.isFull()) {
+                                    return outBatch;
+                                }
 
                                 if (leftPQ.peek() == null) {
-                                   return outBatch;
+                                    return outBatch;
                                 }
-                           }
-                           hasFinishRightRelation = true;
-                           return outBatch;
-                       }
+                            }
+                            hasFinishRightRelation = true;
+                            return outBatch;
+                        }
                     }
                 } else { // exhausted last right element
                     return outBatch;
@@ -155,7 +157,7 @@ public class SortMergeJoin extends Join {
                     compareWithRightRelation();
                     hasFinishLeftRelation = true;
                     return outBatch;
-                /** Cases where left is last element, but right have batches that have matching element */
+                    /** Cases where left is last element, but right have batches that have matching element */
                 } else if (!hasLoadLastRightBatch) {
 
                     while (Tuple.compareTuples(leftTuple, rightTuple, leftIndex, rightIndex) <= 0) {
@@ -176,7 +178,7 @@ public class SortMergeJoin extends Join {
                             return outBatch;
                         }
                     }
-                /** Cases where left is last element, right has some elements left */
+                    /** Cases where left is last element, right has some elements left */
                 } else {
                     processRightRelation();
                     compareWithRightRelation(); // handle last tuple
@@ -184,10 +186,10 @@ public class SortMergeJoin extends Join {
                         return outBatch;
                     }
                 }
-                 hasFinishLeftRelation = true;
-                 return outBatch;
-                }
+                hasFinishLeftRelation = true;
+                return outBatch;
             }
+        }
 
         return outBatch;
     }
@@ -207,7 +209,6 @@ public class SortMergeJoin extends Join {
             if (outBatch.isFull()) {
                 return;
             }
-
         }
         readRightBatch();
     }
@@ -247,23 +248,26 @@ public class SortMergeJoin extends Join {
         }
     }
 
-    /** Handle case where join condition is not set on pkey, duplicates may occur on left relation
-     *  Undo PQ to previous state
+    /**
+     * Handle case where join condition is not set on pkey, duplicates may occur on left relation
+     * Undo PQ to previous state
      */
     private void undoPQ() {
         if (rightTuple != null) {
             tupleStack.push(rightTuple);
         }
 
-        while (Tuple.compareTuples(leftTuple, tupleStack.peek(), leftIndex, rightIndex) <= 0) {
+        while (!tupleStack.isEmpty() && Tuple.compareTuples(leftTuple, tupleStack.peek(), leftIndex, rightIndex) <= 0) {
             rightPQ.add(tupleStack.pop());
         }
 
         rightTuple = rightPQ.poll();
     }
 
+
     /**
      * Loads left block, M - 2 buffer used for left block
+     *
      * @Exception EOFException when no more batch object to be read
      */
     private void loadLeftBlock() {
@@ -305,7 +309,9 @@ public class SortMergeJoin extends Join {
         }
     }
 
-    /** Reads 1 batch file from right relation */
+    /**
+     * Reads 1 batch file from right relation
+     */
     private void readRightBatch() {
         try {
             Batch rightBatch = (Batch) inRight.readObject();

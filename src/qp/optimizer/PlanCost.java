@@ -134,7 +134,7 @@ public class PlanCost {
                 int leftPasses = (int) (Math.ceil(Math.log(leftpages/numbuff) / Math.log(numbuff - 1)) + 1);
                 int rightPasses = (int) (Math.ceil(Math.log(rightpages/numbuff) / Math.log(numbuff - 1)) + 1);
                 int sortCost = 2 * (leftPasses*leftpages + rightPasses*rightpages);
-                joincost = leftpages + rightpages + sortCost;
+                joincost =  leftpages + rightpages + sortCost;
                 break;
             case JoinType.HASHJOIN:
                 joincost = 0;

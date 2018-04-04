@@ -1,32 +1,44 @@
-/** performs randomized optimization, iterative improvement algorithm * */
+/**
+ * performs randomized optimization, iterative improvement algorithm *
+ */
 package qp.optimizer;
 
 import qp.utils.*;
 import qp.operators.*;
+
 import java.lang.Math;
+import java.util.Random;
 import java.util.Vector;
 
 public class RandomOptimizer {
 
-    /** enumeration of different ways to find the neighbor plan * */
+    /**
+     * enumeration of different ways to find the neighbor plan *
+     */
     public static final int METHODCHOICE =
-        0; // selecting neighbor by changing a method for an operator
+            0; // selecting neighbor by changing a method for an operator
 
     public static final int COMMUTATIVE = 1; // by rearranging the operators by commutative rule
     public static final int ASSOCIATIVE = 2; // rearranging the operators by associative rule
 
-    /** Number of altenative methods available for a node as specified above* */
+    /**
+     * Number of altenative methods available for a node as specified above*
+     */
     public static final int NUMCHOICES = 3;
 
     SQLQuery sqlquery; // Vector of Vectors of Select + From + Where + GroupBy
     int numJoin; // Number of joins in this query plan
 
-    /** constructor * */
+    /**
+     * constructor *
+     */
     public RandomOptimizer(SQLQuery sqlquery) {
         this.sqlquery = sqlquery;
     }
 
-    /** Randomly selects a neighbour * */
+    /**
+     * Randomly selects a neighbour *
+     */
     protected Operator getNeighbor(Operator root) {
         // Randomly select a node to be altered to get the neighbour
         int nodeNum = RandNumb.randInt(0, numJoin - 1);
@@ -89,7 +101,7 @@ public class RandomOptimizer {
             if (numJoin != 0) {
 
                 while (flag) { // flag = false when local minimum is reached
-                    System.out.println("---------------while--------");
+                    //System.out.println("---------------while--------");
                     Operator initPlanCopy = (Operator) initPlan.clone();
                     minNeighbor = getNeighbor(initPlanCopy);
 
@@ -138,9 +150,9 @@ public class RandomOptimizer {
             }
         }
         System.out.println("\n\n\n");
-        System.out.println("---------------------------Final Plan----------------");
+        System.out.println("------------------------Final II Plan----------------");
         Debug.PPrint(finalPlan);
-        System.out.println("  " + MINCOST);
+        System.out.println(MINCOST);
         return finalPlan;
     }
 
@@ -149,7 +161,7 @@ public class RandomOptimizer {
      * Sort-Merge Join, Hash Join etc.., * returns the modified plan
      */
     protected Operator neighborMeth(Operator root, int joinNum) {
-        System.out.println("------------------neighbor by method change----------------");
+        //System.out.println("------------------neighbor by method change----------------");
         int numJMeth = JoinType.numJoinTypes();
         if (numJMeth > 1) {
             /** find the node that is to be altered * */
@@ -169,7 +181,7 @@ public class RandomOptimizer {
      * * returns the modifies plan
      */
     protected Operator neighborCommut(Operator root, int joinNum) {
-        System.out.println("------------------neighbor by commutative---------------");
+        //System.out.println("------------------neighbor by commutative---------------");
         /** find the node to be altered* */
         Join node = (Join) findNodeAt(root, joinNum);
         Operator left = node.getLeft();
@@ -214,9 +226,11 @@ public class RandomOptimizer {
         return root;
     }
 
-    /** This is given plan (A X B) X C * */
+    /**
+     * This is given plan (A X B) X C *
+     */
     protected void transformLefttoRight(Join op, Join left) {
-        System.out.println("------------------Left to Right neighbor--------------");
+        //System.out.println("------------------Left to Right neighbor--------------");
         Operator right = op.getRight();
         Operator leftleft = left.getLeft();
         Operator leftright = left.getRight();
@@ -228,7 +242,7 @@ public class RandomOptimizer {
          * at that join operator
          */
         if (leftright.getSchema().contains(leftAttr)) {
-            System.out.println("----------------CASE 1-----------------");
+            //System.out.println("----------------CASE 1-----------------");
 
             temp = new Join(leftright, right, op.getCondition(), OpType.JOIN);
             temp.setJoinType(op.getJoinType());
@@ -240,7 +254,7 @@ public class RandomOptimizer {
             op.setCondition(left.getCondition());
 
         } else {
-            System.out.println("--------------------CASE 2---------------");
+            //System.out.println("--------------------CASE 2---------------");
             /**
              * CASE 2: ( A X a1b1 B) X a4c4 C = B X b1a1 (A X a4c4 C) * a1b1, a4c4 are the join conditions
              * at that join operator
@@ -260,7 +274,7 @@ public class RandomOptimizer {
 
     protected void transformRighttoLeft(Join op, Join right) {
 
-        System.out.println("------------------Right to Left Neighbor------------------");
+        //System.out.println("------------------Right to Left Neighbor------------------");
         Operator left = op.getLeft();
         Operator rightleft = right.getLeft();
         Operator rightright = right.getRight();
@@ -271,7 +285,7 @@ public class RandomOptimizer {
          * at that join operator
          */
         if (rightleft.getSchema().contains(rightAttr)) {
-            System.out.println("----------------------CASE 3-----------------------");
+            //System.out.println("----------------------CASE 3-----------------------");
             temp = new Join(left, rightleft, op.getCondition(), OpType.JOIN);
             temp.setJoinType(op.getJoinType());
             temp.setNodeIndex(op.getNodeIndex());
@@ -285,7 +299,7 @@ public class RandomOptimizer {
              * CASE 4 : A X a1c1 (B X b4c4 C) = (A X a1c1 C ) X c4b4 B * a1b1, b4c4 are the join
              * conditions at that join operator
              */
-            System.out.println("-----------------------------CASE 4-----------------");
+            //System.out.println("-----------------------------CASE 4-----------------");
             temp = new Join(left, rightright, op.getCondition(), OpType.JOIN);
             temp.setJoinType(op.getJoinType());
             temp.setNodeIndex(op.getNodeIndex());
@@ -300,7 +314,9 @@ public class RandomOptimizer {
         }
     }
 
-    /** This method traverses through the query plan and * returns the node mentioned by joinNum */
+    /**
+     * This method traverses through the query plan and * returns the node mentioned by joinNum
+     */
     protected Operator findNodeAt(Operator node, int joinNum) {
         if (node.getOpType() == OpType.JOIN) {
             if (((Join) node).getNodeIndex() == joinNum) {
@@ -366,7 +382,7 @@ public class RandomOptimizer {
                     nj.setNumBuff(numbuff);
                     return nj;
 
-                    /** Temporarity used simple nested join, replace with hasjoin, if implemented * */
+                /** Temporarity used simple nested join, replace with hasjoin, if implemented * */
                 case JoinType.BLOCKNESTED:
                     BlockNestedJoin bj = new BlockNestedJoin((Join) node);
                     bj.setLeft(left);
@@ -398,6 +414,86 @@ public class RandomOptimizer {
             return node;
         } else {
             return node;
+        }
+    }
+
+    /**
+     * implementation of Iterative Improvement Algorithm * for Randomized optimization of Query Plan
+     */
+    public Operator getOptimizedPlanSA() {
+        //Initialize plan with II
+        Operator initPlan = getOptimizedPlan();
+        Operator finalPlan = null;
+
+        modifySchema(initPlan);
+        System.out.println("-----------SA Initial Plan from II-------------");
+        Debug.PPrint(initPlan);
+        PlanCost pc = new PlanCost();
+        int initCost = pc.getCost(initPlan);
+        System.out.println(initCost);
+
+        int MINCOST = Integer.MAX_VALUE;    //S0 cost
+        double TEMP = 0.1 * initCost;         //initial temperature
+        int equilibrium = 16 * numJoin;
+        int count = 0;
+        while (TEMP >= 1 && count < 4) {
+            while (equilibrium > 0) {
+                //System.out.println("--------while--------");
+                Operator initPlanCopy = (Operator) initPlan.clone();
+                Operator neighbor = getNeighbor(initPlanCopy);
+                pc = new PlanCost();
+                int neighborCost = pc.getCost(neighbor);
+                //System.out.println("--------------------------neighbor---------------");
+                //Debug.PPrint(minNeighbor);
+
+                int delta = neighborCost - initCost;
+
+                if (delta <= 0) {
+                    // neighborCost - initCost <= 0 means downhill, set initial plan to neighbor
+                    initPlan = neighbor;
+                    initCost = neighborCost;
+                } else {
+                    // neighborCost - initCost > 0 means uphill, set initial plan to neighbor with probability
+                    double probability = Math.exp((-1) * (delta / TEMP));
+                    Random random = new Random();
+                    if (random.nextDouble() <= probability) {
+                        initPlan = neighbor;
+                        initCost = neighborCost;
+                    }
+                }
+                // if initial cost is < min cost, update min cost
+                if (initCost < MINCOST) {
+                    //System.out.println("Count is resetted");
+                    count = 0;
+                    System.out.println("-----------SA new Minimum Plan-------------");
+                    finalPlan = initPlan;
+                    MINCOST = initCost;
+                    Debug.PPrint(initPlan);
+                    System.out.println(initCost);
+                } else if (initCost == MINCOST) {
+                    count++;
+                    //System.out.println("current count is :" + count);
+                    if (count >= 4)
+                        break;
+                }
+                equilibrium--;  //decrement equilibrium since stage ends
+            }
+
+            TEMP = TEMP * 0.95;
+            equilibrium = 16 * numJoin;
+        }
+
+        System.out.println("\n");
+        System.out.println("-----------------Final Plan to Execute--------------\n");
+        if (finalPlan != null) {
+            Debug.PPrint(finalPlan);
+            System.out.println("  " + MINCOST);
+            return finalPlan;
+        } else {
+            System.out.println();
+            Debug.PPrint(initPlan);
+            System.out.println("  " + initCost);
+            return initPlan;
         }
     }
 }

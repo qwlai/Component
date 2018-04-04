@@ -9,13 +9,13 @@ import qp.utils.*;
 public class JoinType {
 
     public static final int NESTEDJOIN = 0;
-    public static final int BLOCKNESTED = 1;
-    public static final int SORTMERGE = 2;
-    public static final int HASHJOIN = 3;
+    public static final int BLOCKNESTED = 3;
+    public static final int SORTMERGE = 1;
+    public static final int HASHJOIN = 2;
     public static final int INDEXNESTED = 4;
 
     public static int numJoinTypes() {
-        return 3;
+        return 2;
 
         // return k for k joins
     }
