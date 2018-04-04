@@ -1,7 +1,6 @@
 package qp.operators;
 
 import java.io.*;
-import java.nio.Buffer;
 import java.util.PriorityQueue;
 import java.util.Stack;
 
@@ -121,28 +120,23 @@ public class SortMergeJoin extends Join {
                     while (true) {
                         compareWithRightRelation();
 
-                        if (outBatch.isFull()) {
+                        if (outBatch.isFull() || leftPQ.peek() == null) {
                             return outBatch;
-                        }
-
-                        if (leftPQ.peek() == null) {
-                            return  outBatch;
                         }
 
                         /** Need to check that left doesn't have any with similar value anymore */
                         if (rightTuple == null) {
                             /** Next left tuple is the same as current */
                             while (Tuple.compareTuples(leftPQ.peek(), leftTuple, leftIndex) == 0) {
-
-                                leftTuple = leftPQ.poll();
                                 undoPQ();
-                                processRightRelation();
-
-                                if (outBatch.isFull()) {
-                                    return outBatch;
+                                leftTuple = leftPQ.poll();
+                                if (rightPQ.isEmpty()) { // 1 tuple recovered from undoPQ, just compare with 1 other relation
+                                    compareWithRightRelation();
+                                } else { // many tuples recovered from undoPQ
+                                    processRightRelation();
                                 }
 
-                                if (leftPQ.peek() == null) {
+                                if (outBatch.isFull() || leftPQ.peek() == null) {
                                     return outBatch;
                                 }
                             }
@@ -167,18 +161,13 @@ public class SortMergeJoin extends Join {
                     return outBatch;
                     /** Cases where left is last element, but right have batches that have matching element */
                 } else if (!hasLoadLastRightBatch) {
-
                     while (Tuple.compareTuples(leftTuple, rightTuple, leftIndex, rightIndex) <= 0) {
 
                         processRightRelation();
 
                         /** Breaks when left becomes null, which is when right relation with same value has been exhausted */
-                        if (leftTuple == null) {
+                        if (leftTuple == null || outBatch.isFull()) {
                             break;
-                        }
-
-                        if (outBatch.isFull()) {
-                            return outBatch;
                         }
 
                         /** Case where continously loading leads to end of right relation */
