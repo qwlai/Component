@@ -35,3 +35,4 @@ This section shows how `Distinct` results are filtered.
 
 ### 2 Phase Optimization<a name = "2PO"></a>
 This section shows how `2 Phase Optimization`(2PO) algorithm is implemented. 
+
