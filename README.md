@@ -188,7 +188,7 @@ After loading the left block and right block into memory, while `leftPQ` and `ri
         }
     }
 
-We also use `undoPQ` in cases where join condition is not set on the primary key, which can result in duplicates in the left relation
+We also use `undoPQ` in cases where join condition is not set on the primary key, which can result in duplicates in the left relation. This allows us to revert back to the previous state by adding it back into the Priority Queue.
     
     /**
      * Handle case where join condition is not set on pkey, duplicates may occur on left relation
@@ -205,7 +205,7 @@ We also use `undoPQ` in cases where join condition is not set on the primary key
 
         rightTuple = rightPQ.poll();
     }
-    
+
 ### Distinct<a name = "distinct"></a>
 This section shows how `Distinct` results are filtered. 
 
