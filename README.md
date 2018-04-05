@@ -17,18 +17,21 @@ Project Group Members:<a name="group"></a>
 ## Introduction<a name="introduction"></a>
 This document provides some of the features implemented in the query processing engine.
 
-
 ## Implementation<a name ="implementation"></a>
 This section shows the implementation of some features.
 
 ### Block Nested Loop Join<a name = "blocknested"></a>
-This section shows how Block Nested Loop Join(BNL) is implemented. 
+This section shows how `Block Nested Loop Join`(BNL) is implemented. 
+
+The `open()` phase of BNL is very similar to normal `NestedJoin`, except an additional ArrayList `leftBlockTuples`, a block to contain the leftTuples, is initialized in this phase. Once `open()` is done successfully, the program will move to the `next()` phase.
+
+In the `next()` phase, BNL will perform `loadLeftBlock()` to add the leftTuples into the ArrayList `leftBlockTuples` to simulate a block of leftTuples. It will add (Buffer - 2) number of leftTuples into this `leftBlockTuples` ArrayList because 2 buffers are used to load the rightTuples and the output buffer and the remaining buffers are used to store the leftTuples.
 
 ### Sort Merge Join<a name = "sortmerge"></a>
-This section shows how Block Nested Loop Join(BNL) is implemented. 
+This section shows how `Sort Merge Join`(SMJ) is implemented. 
 
 ### Distinct<a name = "distinct"></a>
-This section shows how Block Nested Loop Join(BNL) is implemented. 
+This section shows how `Distinct` results are filtered. 
 
 ### 2 Phase Optimization<a name = "2PO"></a>
-This section shows how Block Nested Loop Join(BNL) is implemented. 
+This section shows how `2 Phase Optimization`(2PO) algorithm is implemented. 
