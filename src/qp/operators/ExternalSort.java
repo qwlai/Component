@@ -183,6 +183,7 @@ public class ExternalSort extends Operator {
 
     /**
      * Write sorted runs batch by batch
+     * Tried to implement phase 1 attribute selection
      */
     private void writeSortedRuns(int currentRun) {
         if (!phaseTwoFlag)
@@ -199,8 +200,34 @@ public class ExternalSort extends Operator {
                     if (mainMemTuples.isEmpty()) { // All tuples have been put into a batch
                         break;
                     }
-                    b.add(mainMemTuples.get(0));
-                    mainMemTuples.remove(0);
+
+//                    // phase 1 write attributes that we are interested into file
+//                    if (isDistinct && !phaseTwoFlag) {
+//                        Tuple outTuple;
+//                        Vector present = new Vector();
+//
+//                        // Add join Index at first element
+//                        present.add(mainMemTuples.get(0).dataAt(joinIndex));
+//
+//                        // Projection index
+//                        for (int i = 0; i < table.getSchema().getAttList().size(); i++) {
+//                            for (int j = 0; j < projectList.size(); j++) {
+//                                if (table.getSchema().getAttribute(i).equals((Attribute) projectList.get(j))) {
+//                                    if (joinIndex != i) {// add those indexes that are projected except join index
+//                                        present.add(mainMemTuples.get(0).dataAt(i));
+//                                        attributeList.add(mainMemTuples.get(0).dataAt(i));
+//                                    }
+//                                }
+//                            }
+//                        }
+//
+//                        outTuple = new Tuple(present);
+//                        b.add(outTuple);
+//                        mainMemTuples.remove(0);
+//                    } else {
+                        b.add(mainMemTuples.get(0));
+                        mainMemTuples.remove(0);
+//                    }
                 }
                 out.writeObject(b);
             }
