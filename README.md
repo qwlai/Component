@@ -212,7 +212,12 @@ This section shows how `Distinct` results are filtered.
 ### 2 Phase Optimization<a name = "2PO"></a>
 This section shows how `2 Phase Optimization`(**2PO**) algorithm is implemented. 
 
-The **2PO** algorithm we implemented consists of using the default Iterative Improvement (**II**) algorithm given to us, coupled with another randomized algorithm called Simulated Annealing (**SA**) algorithm. We will first use **II** algorithm to choose the plan with the lowest IO cost among the random plans within a fixed number of iterations, then pass that plan and its associated cost to the **SA** algorithm to further optimize the plan. Below is the **SA** algorithm code we implemented in for the **2PO**.
+The **2PO** algorithm we implemented consists of using the default Iterative Improvement (**II**) algorithm given to us, coupled with another randomized algorithm called Simulated Annealing (**SA**) algorithm. We will first use **II** algorithm to choose the plan with the lowest IO cost among the random plans within a fixed number of iterations, then pass that plan and its associated cost to the **SA** algorithm to further optimize the plan. We use `TEMP`, `count` and `equilibrium` to act as checks for this algorithm. 
+
+* `TEMP` refers to the temperature and it is used to determine the probability of accepting uphill moves and number of times the outer loop is performed. 
+* `equilibrium` refers to the counter to determine when a stage ends.
+* `count` refers to the number of consecutive moves, where the optimizer will end if after a specific movies, there is still no better plans.
+A stage is referred to the inner while loop. Below is the **SA** algorithm code we implemented for **2PO** algorithm.
 
     public Operator getOptimizedPlanSA() {
         //Initialize plan with II
@@ -223,8 +228,8 @@ The **2PO** algorithm we implemented consists of using the default Iterative Imp
         double TEMP = 0.1 * initCost;         //initial temperature
         int equilibrium = 16 * numJoin;
         int count = 0;
-        while (TEMP >= 1 && count < 4) {
-            while (equilibrium > 0) {
+        while (TEMP >= 1 && count < 4) {      //1 entire inner loop is 1 stage
+            while (equilibrium > 0) {   
                 //System.out.println("--------while--------");
                 Operator initPlanCopy = (Operator) initPlan.clone();
                 Operator neighbor = getNeighbor(initPlanCopy);
@@ -284,3 +289,6 @@ The **2PO** algorithm we implemented consists of using the default Iterative Imp
         }
     }
 
+A stage ends normally when equilibrium decrements to 0. At the end of each stage, the temperature is reduced to 95% and equilibrium is reset back to its default value. At anytime when the optimizer did not pick a better plan within 4 moves, it will break out of the loop and return. 
+
+The difference between **II** and **SA** algorithm is that **II** will not pick a plan which does an uphill move while **SA** uses probability to determine whether to take an uphill move or not.
