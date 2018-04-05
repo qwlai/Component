@@ -290,6 +290,6 @@ A stage is referred to the inner while loop. Below is the **SA** algorithm code 
         }
     }
 
-A stage (inner loop) ends normally when `equilibrium` decrements to 0. At the end of each stage, `TEMP` is reduced to 95% and `equilibrium` is reset back to its default value. When the `TEMP` reaches 1, the optimizer will break out of the loop and return the current optimal plan. At anytime when the optimizer did not pick a better plan within 4 moves, it will also break out of the loop and return the current optimal plan.
+A stage (inner loop) ends normally when `equilibrium` decrements to 0. At the end of each stage, `TEMP` is reduced to 95% and `equilibrium` is reset back to its default value. When the `TEMP` reaches 1, the optimizer will break out of the loop and return the current optimal plan. Within a stage, if the optimizer picks a plan that has the same cost, `count` will be incremented. When `count` reaches 4, the optimizer will also break out of the loop and return the current optimal plan.
 
 The difference between **II** and **SA** algorithm is that **II** will not pick a plan which does an uphill move while **SA** uses probability to determine whether to take an uphill move or not.
