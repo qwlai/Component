@@ -103,11 +103,109 @@ In the second phase of the `ExternalSort`, `mergeSortedRun()` will then be used 
         }
     }
 
-`ExternalSort` is then completed after these 2 phases and will return back to SMJ's `open()`. Next, two priority queues sorted by the index are also created (1 for each relation).
+`ExternalSort` is then completed after these 2 phases and will return back to SMJ's `open()`. Next, two priority queues sorted by the index are also created (1 for each relation). A `tupleStack` is also initialized.
 
     leftPQ = new PriorityQueue<>((t1, t2) -> Tuple.compareTuples(t1, t2, leftIndex));
     rightPQ = new PriorityQueue<>((t1, t2) -> Tuple.compareTuples(t1, t2, rightIndex));
+    tupleStack = new Stack<>();
 
+In the `next()` of SMJ, 2 buffers will be used for the right relation and the output buffer, so `(Buffer - 2)` pages will be used to load pages from the left relation. The priority Queue will then be populated by the tuples sorted by index. Below is the `loadLeftBlock()` codes to show how it is added.
+
+    /**
+     * Loads left block, M - 2 buffer used for left block
+     * @Exception EOFException when no more batch object to be read
+     */
+    private void loadLeftBlock() {
+        for (int i = 0; i < (numBuff - 2); i++) {
+            try {
+                Batch batch = (Batch) inLeft.readObject();
+                if (batch != null) {
+                    for (int j = 0; j < batch.size(); j++) {
+                        leftPQ.add(batch.elementAt(j));
+                    }
+                }
+            } catch (EOFException e) {
+                try { // 1 load all into buffer
+                    if (isFirstBlock) {
+                        leftTuple = leftPQ.poll();
+                        isFirstBlock = false;
+                    }
+
+                    inLeft.close();
+                    hasLoadLastLeftBlock = true;
+                    File f = new File(leftRunName + "0");
+                    f.delete();
+                } catch (IOException io) {
+                   //error codes
+                }
+            } catch (ClassNotFoundException cnfe) {
+                //error codes
+            } catch (IOException io) {
+                return;
+            }
+        }
+
+        if (isFirstBlock) {
+            leftTuple = leftPQ.poll();
+            isFirstBlock = false;
+        }
+    }
+    
+After loading the left block and right block into memory, while `leftPQ` and `rightPQ` is not empty, the tuples will then compared and matching tuples will be added to the output buffer. Upon matching tuples, we will push the `rightTuple` onto the `tupleStack` and poll it from the `RightPQ`.
+
+    /**
+     * Compare left and right tuples, join tuples if they match the condition
+     */
+    private void compareWithRightRelation() {
+
+        if (rightTuple == null || leftTuple == null) {
+            return;
+        }
+
+        int comparison = Tuple.compareTuples(leftTuple, rightTuple, leftIndex, rightIndex);
+
+        if (comparison == 0) { // matching join value, poll right
+            Tuple outTuple = leftTuple.joinWith(rightTuple);
+            outBatch.add(outTuple);
+
+            tupleStack.push(rightTuple);
+            rightTuple = rightPQ.poll();
+
+            if (outBatch.isFull()) { // after adding, check if is full
+                return;
+            }
+        } else if (comparison > 0) { // left > right, progress right
+            tupleStack.push(rightTuple);
+            rightTuple = rightPQ.poll();
+        } else { // left < right progress left
+            if (leftPQ.peek() != null) {
+                /** If next tuple is the same, right has progress more than left, restore */
+                if (Tuple.compareTuples(leftPQ.peek(), leftTuple, leftIndex) == 0) {
+                    undoPQ();
+                }
+            }
+            leftTuple = leftPQ.poll();
+        }
+    }
+
+We also use `undoPQ` in cases where join condition is not set on the primary key, which can result in duplicates in the left relation
+    
+    /**
+     * Handle case where join condition is not set on pkey, duplicates may occur on left relation
+     * Undo PQ to previous state
+     */
+    private void undoPQ() {
+        if (rightTuple != null) {
+            tupleStack.push(rightTuple);
+        }
+
+        while (!tupleStack.isEmpty() && Tuple.compareTuples(leftTuple, tupleStack.peek(), leftIndex, rightIndex) <= 0) {
+            rightPQ.add(tupleStack.pop());
+        }
+
+        rightTuple = rightPQ.poll();
+    }
+    
 ### Distinct<a name = "distinct"></a>
 This section shows how `Distinct` results are filtered. 
 
