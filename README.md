@@ -217,6 +217,7 @@ The **2PO** algorithm we implemented consists of using the default Iterative Imp
 * `TEMP` refers to the temperature and it is used to determine the probability of accepting uphill moves and number of times the outer loop is performed. 
 * `equilibrium` refers to the counter to determine when a stage ends.
 * `count` refers to the number of consecutive moves, where the optimizer will end if after a specific movies, there is still no better plans.
+
 A stage is referred to the inner while loop. Below is the **SA** algorithm code we implemented for **2PO** algorithm.
 
     public Operator getOptimizedPlanSA() {
