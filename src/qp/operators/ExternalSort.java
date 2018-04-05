@@ -1,5 +1,6 @@
 package qp.operators;
 
+import qp.utils.Attribute;
 import qp.utils.Batch;
 import qp.utils.Tuple;
 
@@ -20,6 +21,10 @@ public class ExternalSort extends Operator {
     private Batch batch;
 
     private ObjectInputStream in;
+    private Vector projectList;
+    private boolean isDistinct;
+    private Vector attributeList;
+    private Tuple prevTuple;
 
     public ExternalSort(Operator table, int numBuff, int joinIndex, String fileName) {
         super(OpType.SORT);
@@ -28,6 +33,16 @@ public class ExternalSort extends Operator {
         this.joinIndex = joinIndex;
         this.fileName = fileName;
     }
+
+//    public ExternalSort(Operator table, int numBuff, int joinIndex, String fileName, boolean isDistinct, Vector projectList) {
+//        super(OpType.SORT);
+//        this.table = table;
+//        this.numBuff = numBuff;
+//        this.joinIndex = joinIndex;
+//        this.fileName = fileName;
+//        this.projectList = projectList;
+//        this.isDistinct = isDistinct;
+//    }
 
     public boolean open() {
         if (!table.open()) {
@@ -45,6 +60,9 @@ public class ExternalSort extends Operator {
         return true;
     }
 
+    /**
+     * Generate all the sorted runs
+     */
     /**
      * Generate all the sorted runs
      */
@@ -88,13 +106,84 @@ public class ExternalSort extends Operator {
 
     /**
      * Sorts main meomory tuples
+     * Phase 2 duplicate elimination
+     * but we are unable to implement
      */
     private void sortMainMem() {
-        Collections.sort(mainMemTuples, ((t1, t2) -> Tuple.compareTuples(t1, t2, joinIndex)));
+//        System.out.println("SORT---------------");
+//        if (isDistinct && attributeList != null) {
+//
+//            Collections.sort(mainMemTuples, new Comparator<Tuple>() {
+//                @Override
+//                public int compare(Tuple o1, Tuple o2) {
+//                    //Vector attList = attributeList;
+//
+//                    int finalComparison = 0;
+//                    for (int i = 0; i < o1._data.size(); i++) {
+//                        //int index = table.getSchema().indexOf((Attribute) attList.get(i));
+//                        int result;
+//                        result = Tuple.compareTuples(o1, o2, i);
+//                        finalComparison = result;
+//                        if (result != 0) {
+//                            break;
+//                        }
+//                    }
+//                    return finalComparison;
+//                }
+//            });
+//
+//            System.out.println("after sort---------------");
+//            for (Tuple t : mainMemTuples) {
+//                Debug.PPrint(t);
+//            }
+//            System.out.println("after sort---------------");
+//
+//
+//            Tuple compareThis = null;
+//            boolean ifAllsame = false;
+//            System.out.println("mainmemsize-----------" + mainMemTuples.size());
+//            ArrayList<Tuple> tuplesToBeRemoved = new ArrayList<>();
+//            for (int i = 0; i < mainMemTuples.size(); i++) {
+//                for (int j = 0; j < mainMemTuples.get(i)._data.size(); j++) {
+//                    if (compareThis == null) {
+//                        System.out.println("null once");
+//                        compareThis = mainMemTuples.get(i);
+//                        break;
+//                    } else {
+//                        if (Tuple.compareTuples(compareThis, mainMemTuples.get(i), j) == 0) {
+//                            ifAllsame = true;
+//                        }
+//                        else {
+//                            ifAllsame = false;
+//                            compareThis = mainMemTuples.get(i);
+//                            break;
+//                        }
+//
+//                    }
+//                }
+//                if (ifAllsame) {
+//                    tuplesToBeRemoved.add(mainMemTuples.get(i));
+//                    System.out.println("DUPLICATE");
+//                }
+//            }
+//            for (int i = 0; i < tuplesToBeRemoved.size(); i++) {
+//                mainMemTuples.remove(tuplesToBeRemoved.get(i));
+//            }
+//
+//            System.out.println("after remove duplicate---------------");
+//            for (Tuple t : mainMemTuples) {
+//                Debug.PPrint(t);
+//            }
+//            System.out.println("after remove duplicate---------------");
+//
+//        } else {
+            Collections.sort(mainMemTuples, ((t1, t2) -> Tuple.compareTuples(t1, t2, joinIndex)));
+//        }
     }
 
     /**
      * Write sorted runs batch by batch
+     * Tried to implement phase 1 attribute selection
      */
     private void writeSortedRuns(int currentRun) {
         if (!phaseTwoFlag)
@@ -111,8 +200,34 @@ public class ExternalSort extends Operator {
                     if (mainMemTuples.isEmpty()) { // All tuples have been put into a batch
                         break;
                     }
-                    b.add(mainMemTuples.get(0));
-                    mainMemTuples.remove(0);
+
+//                    // phase 1 write attributes that we are interested into file
+//                    if (isDistinct && !phaseTwoFlag) {
+//                        Tuple outTuple;
+//                        Vector present = new Vector();
+//
+//                        // Add join Index at first element
+//                        present.add(mainMemTuples.get(0).dataAt(joinIndex));
+//
+//                        // Projection index
+//                        for (int i = 0; i < table.getSchema().getAttList().size(); i++) {
+//                            for (int j = 0; j < projectList.size(); j++) {
+//                                if (table.getSchema().getAttribute(i).equals((Attribute) projectList.get(j))) {
+//                                    if (joinIndex != i) {// add those indexes that are projected except join index
+//                                        present.add(mainMemTuples.get(0).dataAt(i));
+//                                        attributeList.add(mainMemTuples.get(0).dataAt(i));
+//                                    }
+//                                }
+//                            }
+//                        }
+//
+//                        outTuple = new Tuple(present);
+//                        b.add(outTuple);
+//                        mainMemTuples.remove(0);
+//                    } else {
+                        b.add(mainMemTuples.get(0));
+                        mainMemTuples.remove(0);
+//                    }
                 }
                 out.writeObject(b);
             }
@@ -131,10 +246,10 @@ public class ExternalSort extends Operator {
             Batch inBatch;
             while ((inBatch = (Batch) in.readObject()) != null) {
                 for (int i = 0; i < inBatch.size(); i++) {
-                        /** Add tuples of pages into memory */
-                        mainMemTuples.add(inBatch.elementAt(i));
-                    }
+                    /** Add tuples of pages into memory */
+                    mainMemTuples.add(inBatch.elementAt(i));
                 }
+            }
         } catch (EOFException e) {
             try {
                 in.close();
