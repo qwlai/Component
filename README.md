@@ -207,7 +207,7 @@ We also use `undoPQ` in cases where join condition is not set on the primary key
     }
 
 ### Distinct<a name = "distinct"></a>
-This section shows how `Distinct` results are filtered. 
+Currently there are some problems implementing the `Distinct` to filter out the results.
 
 ### 2 Phase Optimization<a name = "2PO"></a>
 This section shows how `2 Phase Optimization`(**2PO**) algorithm is implemented. 
