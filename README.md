@@ -22,16 +22,16 @@ This document provides some of the features implemented in the query processing 
 This section shows the implementation of some features.
 
 ### Block Nested Loop Join<a name = "blocknested"></a>
-This section shows how `Block Nested Loop Join`(BNL) is implemented. 
+This section shows how `Block Nested Loop Join`(**BNL**) is implemented. 
 
-The `open()` phase of BNL is very similar to normal `NestedJoin`, except an additional ArrayList `leftBlockTuples`, a block to contain the leftTuples, is initialized in this phase. Once `open()` is done successfully, the program will move to the `next()` phase.
+The `open()` phase of **BNL** is very similar to normal `NestedJoin`, except an additional ArrayList `leftBlockTuples`, a block to contain the leftTuples, is initialized in this phase. Once `open()` is done successfully, the program will move to the `next()` phase.
 
-In the `next()` phase, BNL will perform `loadLeftBlock()` to add the leftTuples into the ArrayList `leftBlockTuples` to simulate a block of leftTuples. It will add (Buffer - 2) number of leftTuples into this `leftBlockTuples` ArrayList because 2 buffers are used to as a input buffer to load the rightTuples and the output buffer (`outbatch`), therefore the remaining buffers are used to store the leftTuples. For each block `leftBlockTuples`, the entire right Table is scanned tuple by tuple, and matching results will be written to the output buffer. If `outbatch` is full, output the page of output tuples and end that instance of `next()`.
+In the `next()` phase, **BNL** will perform `loadLeftBlock()` to add the leftTuples into the ArrayList `leftBlockTuples` to simulate a block of leftTuples. It will add (Buffer - 2) number of leftTuples into this `leftBlockTuples` ArrayList because 2 buffers are used to as a input buffer to load the rightTuples and the output buffer (`outbatch`), therefore the remaining buffers are used to store the leftTuples. For each block `leftBlockTuples`, the entire right Table is scanned tuple by tuple, and matching results will be written to the output buffer. If `outbatch` is full, output the page of output tuples and end that instance of `next()`.
 
 ### Sort Merge Join<a name = "sortmerge"></a>
-This section shows how `Sort Merge Join`(SMJ) is implemented. SMJ is implemented by first doing an `Externalsort` on the two tables before scanning through them for matching results and outputting them.
+This section shows how `Sort Merge Join`(**SMJ**) is implemented. **SMJ** is implemented by first doing an `Externalsort` on the two tables before scanning through them for matching results and outputting them.
 
-In the `open()` phase of SMJ, after calculating the number of tuples per batch and getting the left and right attributes, we will then run `ExternalSort()` on both the left and right table as shown below.
+In the `open()` phase of **SMJ**, after calculating the number of tuples per batch and getting the left and right attributes, we will then run `ExternalSort()` on both the left and right table as shown below.
 
     leftRelation = new ExternalSort(left, numBuff, leftIndex, leftRunName);
     rightRelation = new ExternalSort(right, numBuff, rightIndex, rightRunName);
@@ -103,13 +103,13 @@ In the second phase of the `ExternalSort`, `mergeSortedRun()` will then be used 
         }
     }
 
-`ExternalSort` is then completed after these 2 phases and will return back to SMJ's `open()`. Next, two priority queues sorted by the index are also created (1 for each relation). A `tupleStack` is also initialized.
+`ExternalSort` is then completed after these 2 phases and will return back to **SMJ's** `open()`. Next, two priority queues (`leftPQ` and `rightPQ`) which are sorted by index are created. A `tupleStack` is also initialized.
 
     leftPQ = new PriorityQueue<>((t1, t2) -> Tuple.compareTuples(t1, t2, leftIndex));
     rightPQ = new PriorityQueue<>((t1, t2) -> Tuple.compareTuples(t1, t2, rightIndex));
     tupleStack = new Stack<>();
 
-In the `next()` of SMJ, 2 buffers will be used for the right relation and the output buffer, so `(Buffer - 2)` pages will be used to load pages from the left relation. The priority Queue will then be populated by the tuples sorted by index. Below is the `loadLeftBlock()` codes to show how it is added.
+In the `next()` of **SMJ**, 2 buffers will be used for the right relation and the output buffer, so `(Buffer - 2)` pages will be used to load pages from the left relation. The priority Queue will then be populated by the tuples sorted by join index. Below is the `loadLeftBlock()` codes to show how it is added.
 
     /**
      * Loads left block, M - 2 buffer used for left block
@@ -151,7 +151,7 @@ In the `next()` of SMJ, 2 buffers will be used for the right relation and the ou
         }
     }
     
-After loading the left block and right block into memory, while `leftPQ` and `rightPQ` is not empty, the tuples will then compared and matching tuples will be added to the output buffer. Upon matching tuples, we will push the `rightTuple` onto the `tupleStack` and poll it from the `RightPQ`.
+After loading the left block and right batch into memory, while `leftPQ` and `rightPQ` is not empty, the tuples will then compared and matching tuples will be added to the output buffer. Upon matching tuples, we will push the `rightTuple` onto the `tupleStack` and poll it from the `RightPQ`.
 
     /**
      * Compare left and right tuples, join tuples if they match the condition
@@ -210,7 +210,77 @@ We also use `undoPQ` in cases where join condition is not set on the primary key
 This section shows how `Distinct` results are filtered. 
 
 ### 2 Phase Optimization<a name = "2PO"></a>
-This section shows how `2 Phase Optimization`(2PO) algorithm is implemented. 
+This section shows how `2 Phase Optimization`(**2PO**) algorithm is implemented. 
 
-The 2PO we implemented consists of using the default Iterative Improvement (II) algorithm given to us, and another randomized algorithm called
+The **2PO** algorithm we implemented consists of using the default Iterative Improvement (**II**) algorithm given to us, coupled with another randomized algorithm called Simulated Annealing (**SA**) algorithm. We will first use **II** algorithm to choose the plan with the lowest IO cost among the random plans within a fixed number of iterations, then pass that plan and its associated cost to the **SA** algorithm to further optimize the plan. Below is the **SA** algorithm code we implemented in for the **2PO**.
+
+    public Operator getOptimizedPlanSA() {
+        //Initialize plan with II
+        Operator initPlan = getOptimizedPlan();
+        ... other codes ...
+
+        int MINCOST = Integer.MAX_VALUE;      //S0 cost
+        double TEMP = 0.1 * initCost;         //initial temperature
+        int equilibrium = 16 * numJoin;
+        int count = 0;
+        while (TEMP >= 1 && count < 4) {
+            while (equilibrium > 0) {
+                //System.out.println("--------while--------");
+                Operator initPlanCopy = (Operator) initPlan.clone();
+                Operator neighbor = getNeighbor(initPlanCopy);
+                pc = new PlanCost();
+                int neighborCost = pc.getCost(neighbor);
+                //System.out.println("--------------------------neighbor---------------");
+                //Debug.PPrint(minNeighbor);
+
+                int delta = neighborCost - initCost;
+
+                if (delta <= 0) {
+                    // neighborCost - initCost <= 0 means downhill, set initial plan to neighbor
+                    initPlan = neighbor;
+                    initCost = neighborCost;
+                } else {
+                    // neighborCost - initCost > 0 means uphill, set initial plan to neighbor with probability
+                    double probability = Math.exp((-1) * (delta / TEMP));
+                    Random random = new Random();
+                    if (random.nextDouble() <= probability) {
+                        initPlan = neighbor;
+                        initCost = neighborCost;
+                    }
+                }
+                // if initial cost is < min cost, update min cost
+                if (initCost < MINCOST) {
+                    //System.out.println("Count is resetted");
+                    count = 0;
+                    System.out.println("-----------SA new Minimum Plan-------------");
+                    finalPlan = initPlan;
+                    MINCOST = initCost;
+                    Debug.PPrint(initPlan);
+                    System.out.println(initCost);
+                } else if (initCost == MINCOST) {
+                    count++;
+                    //System.out.println("current count is :" + count);
+                    if (count >= 4)
+                        break;
+                }
+                equilibrium--;  //decrement equilibrium since stage ends
+            }
+
+            TEMP = TEMP * 0.95;
+            equilibrium = 16 * numJoin;
+        }
+
+        System.out.println("\n");
+        System.out.println("-----------------Final Plan to Execute--------------\n");
+        if (finalPlan != null) {
+            Debug.PPrint(finalPlan);
+            System.out.println("  " + MINCOST);
+            return finalPlan;
+        } else {
+            System.out.println();
+            Debug.PPrint(initPlan);
+            System.out.println("  " + initCost);
+            return initPlan;
+        }
+    }
 
